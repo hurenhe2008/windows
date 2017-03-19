@@ -1,0 +1,11 @@
+【windows平台Debug模式下内存检测方法】
+    VC自带CrtDbg  、 vld三方库
+
+【VC自带CrtDbg使用文章推荐】
+https://msdn.microsoft.com/en-us/library/x98tx3cf.aspx
+https://msdn.microsoft.com/en-us/library/974tc9t1.aspx
+http://www.cnblogs.com/eric_lgf/archive/2010/02/08/1665828.html
+
+【VLD库使用文章推荐】
+http://vld.codeplex.com/SourceControl/latest#README.md
+http://blog.csdn.net/fan_hai_ping/article/details/8023433
