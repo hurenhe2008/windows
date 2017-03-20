@@ -3,12 +3,14 @@
 
 /*
 @func:
-    app_exist()    //inner call app_exist_ex
+    app_exist()    
 @param:
     no parameter
 @return:
     if the application has run, return true;
     otherwise return false.
+@note: 
+    app_exist_ex(DEF_APP_NAME) will called inner app_exist().
 */
 bool app_exist();
 
