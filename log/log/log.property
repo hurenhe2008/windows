@@ -1,0 +1,32 @@
+# log4cpp property configure template file 
+# use the file with AtLog library(AtLog will fixed with .fileName property)
+# write with 10 backup file at the same time.
+
+log4cpp.rootCategory=DEBUG, rootAppender
+log4cpp.category.Log_Main=DEBUG, Log_Main
+log4cpp.category.Log_Net=DEBUG, Log_Net
+log4cpp.category.Log_ThirdPart=DEBUG, Log_ThirdPart
+
+log4cpp.appender.rootAppender=ConsoleAppender
+log4cpp.appender.rootAppender.layout=BasicLayout
+
+log4cpp.appender.Log_Main=RollingFileAppender
+log4cpp.appender.Log_Main.fileName=.\Log_Main.log
+log4cpp.appender.Log_Main.maxFileSize=2048000
+log4cpp.appender.Log_Main.maxBackupIndex=10
+log4cpp.appender.Log_Main.layout=PatternLayout
+log4cpp.appender.Log_Main.layout.ConversionPattern={%d}:[%t][%p] %m%n
+
+log4cpp.appender.Log_Net=RollingFileAppender
+log4cpp.appender.Log_Net.fileName=.\Log_Net.log
+log4cpp.appender.Log_Net.maxFileSize=2048000
+log4cpp.appender.Log_Net.maxBackupIndex=10
+log4cpp.appender.Log_Net.layout=PatternLayout
+log4cpp.appender.Log_Net.layout.ConversionPattern={%d}:[%t][%p] %m%n
+
+log4cpp.appender.Log_ThirdPart=RollingFileAppender
+log4cpp.appender.Log_ThirdPart.fileName=.\Log_ThirdPart.log
+log4cpp.appender.Log_ThirdPart.maxFileSize=2048000
+log4cpp.appender.Log_ThirdPart.maxBackupIndex=10
+log4cpp.appender.Log_ThirdPart.layout=PatternLayout
+log4cpp.appender.Log_ThirdPart.layout.ConversionPattern={%d}:[%t][%p] %m%n
