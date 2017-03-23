@@ -2,40 +2,50 @@
 #define _SINGLETON_H_
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif 
+class Singleton
+{
+public:
+    static Singleton& instance();
 
-#ifndef bool
-    #include <stdbool.h>
-#endif 
+    /* not safe-thread, advise not call it if you can't control */
+    static void destroy(); 
 
-/*
-@func:
-    app_exist()    
-@param:
-    no parameter
-@return:
-    if the application has run, return 1;
-    otherwise return 0.
-@note: 
-    app_exist_ex(DEF_APP_NAME) will called inner app_exist().
-*/
-bool app_exist();
+private:
+    Singleton();
 
-/*
-@func:
-    app_exist()    
-@param:
-    appname - the application name which identify the app exe.
-@return:
-    if the application has run, return 1;
-    otherwise return 0.
-*/
-bool app_exist_ex(const char *appname);
+    ~Singleton();
 
-#ifdef __cplusplus
-}
-#endif 
+    bool init();
+
+private:
+    Singleton(const Singleton &) = delete;
+    Singleton& operator=(const Singleton &) = delete;
+    Singleton* operator&() = delete; /* avoid delete outer */
+
+private:
+    static Singleton *mp_self;
+};
+
+
+/* some front endpoint use this singleton */
+class SingletonF 
+{
+public:
+    static SingletonF& instance();
+
+    /* must know when and where to call before other threads call instance */
+    bool init();
+
+private:
+    SingletonF();
+
+    ~SingletonF();
+
+    SingletonF(const SingletonF &) = delete;
+    SingletonF& operator=(const SingletonF &) = delete;
+    /* avoid delete outer and address access error */
+    Singleton* operator&() = delete; 
+};
+
 
 #endif //_SINGLETON_H_
