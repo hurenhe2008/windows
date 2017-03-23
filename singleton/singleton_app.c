@@ -53,7 +53,7 @@ bool singleton_mutex_check(const char *name)
 
     CreateMutexA(NULL, FALSE, name);
 
-    if (ERROR_ALREADY_EXISTS != GetLastError()) {
+    if (ERROR_ALREADY_EXISTS == GetLastError()) {
         bexist = true;
     }
 
