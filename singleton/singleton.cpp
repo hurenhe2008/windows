@@ -1,88 +1,81 @@
 #include "singleton.h"
-#include <windows.h>
-#include <assert.h>
 
-/* default application name */
-#define DEF_APP_NAME "default_application_name"
+#include <new>
+#include <mutex>
 
-/* method check singleton */
-typedef enum singleton_method_e {
-    singleton_method_mutex = 0,
-    singleton_method_event,
-    singleton_method_dataseg,
-    singleton_method_totals     
-} singleton_method_t;
+static std::mutex s_mutex;
+Singleton* Singleton::mp_self = nullptr;
 
-static singleton_method_t s_singleton_method = singleton_method_mutex;
-
-static bool singleton_mutex_check(const char *name);
-
-static bool singleton_event_check(const char *name);
-
-static bool singleton_dataseg_check(/* use default name */);
-
-
-bool app_exist()
+Singleton& Singleton::instance()
 {
-    return app_exist_ex(DEF_APP_NAME);
+    if (!mp_self) {
+        /* lock */
+        s_mutex.lock();
+        if (!mp_self) {   /* double check */
+            /* avoid cpu switch assigne and construct operation */
+            Singleton *tmp = new(std::nothrow) Singleton;
+            /* return nullptr if init failed */
+            if (tmp && !tmp->init()) {
+                delete tmp;
+                tmp = nullptr;
+            }
+            mp_self = tmp;
+        }
+        /* unlock */
+        s_mutex.unlock();      
+    }
+
+    return *mp_self;
 }
 
-bool app_exist_ex(const char *appname)
+void Singleton::destroy()
 {
-    switch (s_singleton_method) {
-    case singleton_method_mutex:
-        return singleton_mutex_check();
-
-    case singleton_method_event:
-        return singleton_event_check();
-
-    case singleton_method_dataseg:
-        return singleton_dataseg_check();
-
-    case singleton_method_totals:
-        abort();  return false;
-
-    default:
-        return singleton_event_check();
+    /* not safe-thread, advise not call if you can't control */
+    /* advise call in mainthread after other threads all exit */
+    if (mp_self) {
+        delete mp_self;
+        mp_self = nullptr;
     }
 }
 
-bool singleton_mutex_check(const char *name)
+Singleton::Singleton()
 {
-    bool bexist = false;
+    /* members init */
+}
 
-    CreateMutexA(NULL, FALSE, name);  
+Singleton::~Singleton()
+{
+    /* members unit */
+}
 
-    if (ERROR_ALREADY_EXISTS != ::GetLastError()) {
-        bexist = true;
-    }
+bool Singleton::init()
+{
+    /* singleton init */
+    return true;
+}
+
+
+//============================================================================
+SingletonF& SingletonF::instance()
+{
+    static SingletonF self;
     
-    return bexist;
+    return self;
 }
 
-bool singleton_event_check(const char *name)
+SingletonF::SingletonF()
 {
-    bool bexist = false;
-
-    CreateEventA(NULL, TRUE, FALSE, DEFAULT_APP_NAME);
-
-    if (ERROR_ALREADY_EXISTS == ::GetLastError()) {
-        bexist = true;
-    }
-
-    return bexist;
+    /* members init */
 }
 
-
-#pragma data_seg(DEF_APP_NAME)
-int g_app_run = 0;
-#pragma data_seg()
-#pragma comment(linker, "/section:"DEF_APP_NAME",RWS")
-
-bool singleton_dataseg_check()
+SingletonF::~SingletonF()
 {
-    g_app_run += 1;
+    /* members unit */
+}
 
-    return (g_app_run > 1) ? true : false;
+bool SingletonF::init()
+{
+    /* singleton init */
+    return true;
 }
 
