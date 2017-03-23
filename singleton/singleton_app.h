@@ -10,29 +10,29 @@ extern "C" {
 #include <stdbool.h>
 #endif 
 
-    /*
-    @func:
+/*
+@func:
     app_exist()
-    @param:
+@param:
     no parameter
-    @return:
+@return:
     if the application has run, return 1;
     otherwise return 0.
-    @note:
+@note:
     app_exist_ex(DEF_APP_NAME) will called inner app_exist().
-    */
-    bool app_exist();
+*/
+bool app_exist();
 
-    /*
-    @func:
-    app_exist()
-    @param:
+/*
+@func:
+    app_exist(const char *)
+@param:
     appname - the application name which identify the app exe.
-    @return:
+@return:
     if the application has run, return 1;
     otherwise return 0.
-    */
-    bool app_exist_ex(const char *appname);
+*/
+bool app_exist_ex(const char *appname);
 
 #ifdef __cplusplus
 }
