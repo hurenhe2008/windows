@@ -33,6 +33,7 @@ private:
 
     unsigned                 m_curr_pos;
     Mutex2                   m_task_mutex;
+    HANDLE                   m_wait_event;
 
 #define PERIOD_TIME      1000   /* ms */
 #define TASK_QUEUE_SIZE  3600   /* s */
