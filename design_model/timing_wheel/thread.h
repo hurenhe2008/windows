@@ -10,7 +10,7 @@ public:
     virtual ~Thread();
 
     bool start();
-    bool isrun() const { return m_brun && m_hthread; }
+    bool isrun() const { return m_brun; }
     bool stop(unsigned timeout = INFINITE);
 
     virtual unsigned run() = 0;
@@ -21,8 +21,10 @@ private:
     Thread(const Thread&) = delete;
     Thread& operator=(const Thread&) = delete;
 
-private:
+protected:
     volatile bool m_brun;
+
+private:
     HANDLE        m_hthread;
 };
 
