@@ -3,22 +3,29 @@
 
 
 /* task handle when time touch */
-typedef bool(*task_deal_f)(void *);
+typedef bool(*task_touch_f)(void *);
 
-/* task not finished when exit */
-typedef void(*task_nofinish_f)(void *);
+/* task cancel with exit */
+typedef void(*task_cancel_f)(void *);
 
-/* task error when call task_deal_f */
+/* task error when call task_touch_f */
 typedef void(*task_error_f)(void *);
 
 
+#pragma pack(4)
+
 typedef struct timing_task_s {
-    task_deal_f     deal_func;  
+    task_touch_f    touch_func;
     task_error_f    error_func;
-    task_nofinish_f nofinish_func;
+    task_cancel_f   cancel_func;
     void*           data;
-    unsigned        touch_after_seconds;
+    union {
+        int         touch_after_seconds;   
+        int         touch_after_cycles;
+    };  
 }timing_task_t;
+
+#pragma pack()
 
 
 #endif //_TIMING_TASK_H_
