@@ -1,11 +1,8 @@
-#define WIN32_LEAN_AND_MEAN
 #include "timing_task_wheel.h"
 #include "mutex_locker.h"
 #include <Windows.h>
-#include <winsock2.h>
 #include <new>
 
-#pragma comment(lib, "ws2_32.lib")
 
 TimingTaskWheel* TimingTaskWheel::mp_self = nullptr;
 Mutex2 TimingTaskWheel::m_inst_mutex;
@@ -44,6 +41,7 @@ void TimingTaskWheel::destroy()
 
 TimingTaskWheel::TimingTaskWheel()
     : m_curr_pos(0)
+    , m_wait_event(NULL)
 {
 
 }
@@ -55,10 +53,8 @@ TimingTaskWheel::~TimingTaskWheel()
 
 bool TimingTaskWheel::init()
 {
-    WSADATA wsdata;
-    if (0 != WSAStartup(MAKEWORD(2, 2), &wsdata)) {
-        return false;
-    }
+    m_wait_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    if (NULL == m_wait_event) return false;
 
     MutexLocker lock(&m_task_mutex);
 
@@ -74,7 +70,10 @@ bool TimingTaskWheel::uninit()
     /* stop thread if run */
     if (!this->stop())  return false;
 
-    if (0 != WSACleanup()) return false;
+    if (m_wait_event) {
+        CloseHandle(m_wait_event);
+        m_wait_event = NULL;
+    }
 
     MutexLocker lock(&m_task_mutex);
 
@@ -98,11 +97,10 @@ bool TimingTaskWheel::uninit()
 
 unsigned TimingTaskWheel::run()
 { 
-    struct timeval time_val = { 0 };
     unsigned last_time = 0;
     int interval = 0;
     bool bfirst = true;
-    int retval = 1;
+    int retval = 0;
 
     while (m_brun) {
         
@@ -118,16 +116,10 @@ unsigned TimingTaskWheel::run()
             bfirst = false;
         }
 
-        time_val.tv_sec = (interval < 1000) ? 0 : (interval / 1000);
-        time_val.tv_usec = (0 == interval) ? 0 : (interval % 1000);
-
         /* time interval */
-        int ret = select(0, nullptr, nullptr, nullptr, &time_val);
-        if (ret < 0) {
-            if (WSAEINTR == WSAGetLastError()) {
-                continue;
-            }
-            retval = 0;
+        DWORD ret = WaitForSingleObject(m_wait_event, interval);
+        if (WAIT_TIMEOUT != ret) {
+            retval = GetLastError();
             break;
         }
 
