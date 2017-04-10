@@ -1,7 +1,7 @@
 #ifndef _TIMING_TASK_WHEEL_H_
 #define _TIMING_TASK_WHEEL_H_
 
-#include <set>
+#include <list>
 #include "mutex2.h"
 #include "timing_task.h"
 #include "thread.h"
@@ -36,7 +36,7 @@ private:
 
 #define PERIOD_TIME      1000   /* ms */
 #define TASK_QUEUE_SIZE  3600   /* s */
-    typedef std::set<timing_task_t> task_queue_t;
+    typedef std::list<timing_task_t> task_queue_t;
     task_queue_t             m_task_queue[TASK_QUEUE_SIZE];
 };
 
