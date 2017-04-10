@@ -1,9 +1,14 @@
+#define WIN32_LEAN_AND_MEAN
 #include "timing_task_wheel.h"
 #include "mutex_locker.h"
 #include <Windows.h>
+#include <winsock2.h>
 #include <new>
 
+#pragma comment(lib, "ws2_32.lib")
+
 TimingTaskWheel* TimingTaskWheel::mp_self = nullptr;
+Mutex2 TimingTaskWheel::m_inst_mutex;
 
 TimingTaskWheel& TimingTaskWheel::instance()
 {
@@ -142,7 +147,7 @@ void TimingTaskWheel::handleTaskQueue()
             if (!it->touch_func(it->data)) {
                 it->error_func(it->data);
             }
-            queue.erase(it++);
+            it = queue.erase(it);
         }
         else {
             it->touch_after_cycles -= 1;
@@ -177,10 +182,7 @@ bool TimingTaskWheel::insertTask(timing_task_t *task)
         insert_pos = insert_pos % TASK_QUEUE_SIZE;
     }
   
-    m_task_queue[insert_pos].insert(*task);
+    m_task_queue[insert_pos].push_back(*task);
 
     return true;
 }
-
-
-
