@@ -15,7 +15,7 @@ Thread::~Thread()
 
 bool Thread::start()
 {
-    if (m_hthread && m_brun) {
+    if (m_hthread || m_brun) {
         return true;
     }
 
@@ -23,11 +23,11 @@ bool Thread::start()
         (void *)this, CREATE_SUSPENDED, nullptr);
 
     if (NULL == m_hthread) {
-        m_brun = false;
-        return m_brun;
+        return m_brun = false;
     }
 
     m_brun = true;
+
     if (-1 == ResumeThread(m_hthread)) {
         m_brun = false;
         CloseHandle(m_hthread);
@@ -41,16 +41,19 @@ unsigned __stdcall Thread::thread_proc(void *data)
 {
     Thread *pthread = (Thread *)(data);
     
-    if (pthread) {
+    if (pthread) 
         return pthread->run();
-    }
-
-    return 0;
+    else
+        return 0;
 }
 
 bool Thread::stop(unsigned timeout)
 {
+    if (!m_brun)  return true;
+
     m_brun = false;
+
+    if (!m_hthread)  return true;
 
     DWORD ret = WaitForSingleObject(m_hthread, timeout);
 
