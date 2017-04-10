@@ -55,6 +55,11 @@ TimingTaskWheel::~TimingTaskWheel()
 
 bool TimingTaskWheel::init()
 {
+    WSADATA wsdata;
+    if (0 != WSAStartup(MAKEWORD(2, 2), &wsdata)) {
+        return false;
+    }
+
     MutexLocker lock(&m_task_mutex);
 
     for (int i = 0; i < TASK_QUEUE_SIZE; ++i) {
@@ -68,6 +73,8 @@ bool TimingTaskWheel::uninit()
 {
     /* stop thread if run */
     if (!this->stop())  return false;
+
+    if (0 != WSACleanup()) return false;
 
     MutexLocker lock(&m_task_mutex);
 
