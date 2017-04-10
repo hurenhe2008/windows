@@ -34,14 +34,11 @@ private:
     unsigned                 m_curr_pos;
     Mutex2                   m_task_mutex;
 
+#define PERIOD_TIME      1000   /* ms */
+#define TASK_QUEUE_SIZE  3600   /* s */
     typedef std::set<timing_task_t> task_queue_t;
-    typedef task_queue_t::iterator  task_queue_itr;
-    typedef task_queue_t::const_iterator task_queue_citr;
-#define TASK_QUEUE_SIZE  3600
     task_queue_t             m_task_queue[TASK_QUEUE_SIZE];
 };
-
-
 
 
 #endif //_TIMING_TASK_WHEEL_H_
