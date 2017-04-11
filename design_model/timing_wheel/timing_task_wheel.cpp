@@ -110,6 +110,7 @@ unsigned TimingTaskWheel::run()
             if (interval < 0) {
                 interval = 0;
             }
+	    last_time += PERIOD_TIME;
         }
         else {
             last_time = GetTickCount();
