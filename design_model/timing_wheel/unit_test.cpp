@@ -36,11 +36,10 @@ void insert_task()
     task.touch_func = task_touch;
     task.error_func = task_error;
     task.cancel_func = task_cancel;
-    task.touch_after_seconds = 60;
 
     for (int i = 0; i < 10; ++i) {
         task.data = (void *)s_data;
-        task.touch_after_seconds += s_data;
+        task.touch_after_seconds = (60 + s_data);
         TimingTaskWheel::instance().insertTask(&task);
         ++s_data;
     }
