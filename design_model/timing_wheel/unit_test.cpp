@@ -23,7 +23,7 @@ int main(int argc, const char *argv[])
         Sleep(s_sleep_time);
     }
 
-    Sleep(1000 * 60 * 10);
+    Sleep(1000 * 10);
     
     TimingTaskWheel::instance().destroy();
     
@@ -37,7 +37,7 @@ void insert_task()
     task.error_func = task_error;
     task.cancel_func = task_cancel;
 
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 5; ++i) {
         task.data = (void *)s_data;
         task.touch_after_seconds = (60 + s_data);
         TimingTaskWheel::instance().insertTask(&task);
