@@ -41,5 +41,4 @@ private:
     task_queue_t             m_task_queue[TASK_QUEUE_SIZE];
 };
 
-
 #endif //_TIMING_TASK_WHEEL_H_
