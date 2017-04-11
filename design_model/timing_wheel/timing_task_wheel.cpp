@@ -32,8 +32,6 @@ TimingTaskWheel& TimingTaskWheel::instance()
 void TimingTaskWheel::destroy()
 {
     if (mp_self) {
-        mp_self->uninit();
-
         delete mp_self;
         mp_self = nullptr;
     }
@@ -48,7 +46,7 @@ TimingTaskWheel::TimingTaskWheel()
 
 TimingTaskWheel::~TimingTaskWheel()
 {
-    destroy();
+	this->uninit();
 }
 
 bool TimingTaskWheel::init()
@@ -61,6 +59,8 @@ bool TimingTaskWheel::init()
     for (int i = 0; i < TASK_QUEUE_SIZE; ++i) {
         m_task_queue[i].clear();
     }
+
+	m_curr_pos = 0;
 
     return true;
 }
@@ -90,6 +90,7 @@ bool TimingTaskWheel::uninit()
 
         m_task_queue[i].clear();
     }
+	m_curr_pos = 0;
 
     return true;
 }
@@ -172,8 +173,8 @@ bool TimingTaskWheel::insertTask(timing_task_t *task)
     /* cycles to recycle */
     unsigned cycles = task->touch_after_seconds / TASK_QUEUE_SIZE;
     /* insert position */
-    unsigned insert_pos = m_curr_pos + 
-        task->touch_after_seconds % TASK_QUEUE_SIZE;
+    unsigned insert_pos = (m_curr_pos + task->touch_after_seconds)
+		% TASK_QUEUE_SIZE;
     
     task->touch_after_cycles = cycles;
 
