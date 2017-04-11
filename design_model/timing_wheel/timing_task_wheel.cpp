@@ -95,7 +95,6 @@ bool TimingTaskWheel::uninit()
     return true;
 }
 
-
 unsigned TimingTaskWheel::run()
 { 
     unsigned last_time = 0;
@@ -110,7 +109,7 @@ unsigned TimingTaskWheel::run()
             if (interval < 0) {
                 interval = 0;
             }
-	    last_time += PERIOD_TIME;
+			last_time += PERIOD_TIME;
         }
         else {
             last_time = GetTickCount();
@@ -119,6 +118,10 @@ unsigned TimingTaskWheel::run()
         }
 
         /* time interval */
+#ifdef _DEBUG 
+		printf("wait for time: %d\n", interval);
+#endif 
+
         DWORD ret = WaitForSingleObject(m_wait_event, interval);
         if (WAIT_TIMEOUT != ret) {
             retval = GetLastError();
@@ -143,18 +146,27 @@ void TimingTaskWheel::handleTaskQueue()
     task_queue_t &queue = m_task_queue[m_curr_pos];
     task_queue_t::iterator it = queue.begin();
 
-    for (; it != queue.end(); ) {
-        if (it->touch_after_cycles <= 0) {
-            if (!it->touch_func(it->data)) {
-                it->error_func(it->data);
-            }
-            it = queue.erase(it);
-        }
-        else {
-            it->touch_after_cycles -= 1;
-            it++;
-        }
-    }
+#ifdef _DEBUG
+	unsigned cnt = 0;
+#endif 
+
+	for (; it != queue.end(); ) {
+		if (it->touch_after_cycles <= 0) {
+			if (!it->touch_func(it->data)) {
+				++cnt;
+				it->error_func(it->data);
+			}
+			it = queue.erase(it);
+		}
+		else {
+			it->touch_after_cycles -= 1;
+			it++;
+		}
+	}
+
+#ifdef _DEBUG
+	printf("POS: %d  -->  touch event count: %d\n", m_curr_pos, cnt);
+#endif 
 
     if (m_curr_pos + 1 < TASK_QUEUE_SIZE)
         ++m_curr_pos;
