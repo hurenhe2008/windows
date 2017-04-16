@@ -2,13 +2,13 @@
 #define __TASK_H__
 
 //task handle function
-typedef bool(__cdecl *task_handle_f)(void *);
+typedef bool(*task_handle_f)(void *);
 
 //task meet error when handle/call task interface. 
-typedef void(__cdecl *task_error_f)(void *);
+typedef void(*task_error_f)(void *);
 
 //task will be canceled when threadpool force to exit.
-typedef void(__cdecl *task_cancel_f)(void *);
+typedef void(*task_cancel_f)(void *);
 
 #pragma pack(4)
 typedef struct task_info_s {
