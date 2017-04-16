@@ -49,7 +49,7 @@ bool Thread::Stop()
         return WAIT_OBJECT_0 == 
             WaitForSingleObject(m_thread_handle, INFINITE);
 #elif defined(__linux__)
-        return 0 == pthread_join(&m_thread_handle, nullptr);
+        return 0 == pthread_join(m_thread_handle, nullptr);
 #else
         #error "this system not support!"
 #endif 

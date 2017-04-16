@@ -3,8 +3,9 @@
 #include <assert.h>
 
 #ifdef __linux__
-#inlcude <time.h>
+#include <unistd.h>
 #endif 
+
 
 Condition::Condition()
 {
@@ -38,7 +39,7 @@ bool Condition::WaitTime(Mutex &mutex, unsigned milliseconds)
     struct timespec timeout;
     timeout.tv_sec = milliseconds / 1000;
     timeout.tv_nsec = (milliseconds % 1000) * 1000 * 1000; /*nanosecond*/
-    return 0 == pthread_cond_timedwait(&m_cond, &mutex.m_mutex, );
+    return 0 == pthread_cond_timedwait(&m_cond, &mutex.m_mutex, &timeout);
 #else 
     #error("this system not support!");
 #endif 
@@ -74,7 +75,7 @@ bool Condition::Init()
 #if defined(_WIN32)
     InitializeConditionVariable(&m_cond);
 #elif defined(__linux__)
-    return 0 == pthread_cond_init(&m_cond);
+    return 0 == pthread_cond_init(&m_cond, nullptr);
 #else 
     #error("this system not support!");
 #endif 

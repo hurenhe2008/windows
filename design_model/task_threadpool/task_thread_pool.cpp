@@ -1,5 +1,6 @@
 #include "task_thread_pool.h"
-#include ".\utils\thread.h"
+#include "thread.h"
+#include <memory.h>
 #include <new>
 
 #if defined(_WIN32) 
@@ -58,6 +59,7 @@ bool TaskThreadMgr::Start()
     return Init();
 }
 
+#if defined(_WIN32) 
 unsigned __stdcall thread_pool_proc(void *data)
 {
     TaskThreadMgr *pmgr = reinterpret_cast<TaskThreadMgr *>(data);
@@ -68,6 +70,23 @@ unsigned __stdcall thread_pool_proc(void *data)
 
     return pmgr->run() ? 0 : 1;
 }
+#elif defined(__linux__)
+void* thread_pool_proc(void *data)
+{
+    unsigned ret = 1;
+
+    TaskThreadMgr *pmgr = reinterpret_cast<TaskThreadMgr *>(data);
+
+    if (!pmgr) {
+        return (void *)ret;
+    }
+
+    ret = pmgr->run() ? 0 : 1;
+    return (void *)ret;
+}
+#else 
+#error "this system not support!"
+#endif 
 
 bool TaskThreadMgr::run()
 {
@@ -92,7 +111,7 @@ bool TaskThreadMgr::run()
             break;  
         }
 
-        task_info_t &task = m_task_queue.Dequeue(); 
+        const task_info_t &task = m_task_queue.Dequeue(); 
         m_task_mutex.UnLock();
 
         m_cond_non_full.Signal();
@@ -173,7 +192,7 @@ bool TaskThreadMgr::UnInit()
 
     //if task not be handled, a chance to notify
     if (!m_task_queue.Empty()) {
-        task_info_t &task = m_task_queue.Dequeue();
+        const task_info_t &task = m_task_queue.Dequeue();
         task.cancel_fun(task.data);
     }
 

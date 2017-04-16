@@ -2,8 +2,8 @@
 #define __TASK_THREAD_POOL_H__
 
 #include "task_queue.h"
-#include ".\utils\mutex.h"
-#include ".\utils\conditon.h"
+#include "mutex.h"
+#include "conditon.h"
 
 class Thread;
 class TaskThreadMgr

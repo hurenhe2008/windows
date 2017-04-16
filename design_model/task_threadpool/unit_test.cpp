@@ -26,7 +26,7 @@ static void task_cancel(void *data);
 
 
 
-int main(int argc, const char *argv[])
+int main(void)
 {
     printf("enable task_thread_mgr...\n");
     TaskThreadMgr *mgr = enable_task_mgr();
