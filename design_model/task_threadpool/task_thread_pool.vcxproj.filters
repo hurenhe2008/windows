@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="utils">
+      <UniqueIdentifier>{d39b47f8-608e-42ea-8a73-c567e5e28d9c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="header">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="task.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="task_queue.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="task_thread_pool.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\conditon.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\mutex.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\thread.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="task_queue.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="task_thread_pool.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="unit_test.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="utils\condition.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="utils\mutex.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="utils\thread.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
