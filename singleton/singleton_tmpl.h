@@ -4,6 +4,19 @@
 #include <new>
 #include <mutex>
 
+/********************************************************************
+@singleton template:
+    instance(): get signleton instance.
+    destroy(): destroy singleton instance when exit.
+    
+@use:
+    //inherit SingletonImpl
+    class XXX : public SingletonImpl<XXX>
+    {
+        ......   
+    };
+********************************************************************/
+
 template <typename T>
 class SingletonTmpl
 {
