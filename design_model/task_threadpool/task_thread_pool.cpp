@@ -29,27 +29,82 @@ TaskThreadMgr::~TaskThreadMgr()
     UnInit();
 }
 
-bool TaskThreadMgr::AddTask(const task_info_t *task)
+unsigned TaskThreadMgr::CalcIdealThreadCnt()
 {
-    bool bret = false;
+    // ideals = 2 * CPUs + 2
+    unsigned ideals = 1;
 
-    m_task_mutex.Lock();
+#if defined(_WIN32) 
+    SYSTEM_INFO syinfo;
+    GetSystemInfo(&syinfo);
+    ideals = syinfo.dwNumberOfProcessors * 2 + 2;
+#elif defined(__linux__)
+    ideals = get_nprocs();
+#else 
+    #error "this system not support!"
+#endif 
 
-    while (m_task_queue.Full() && !m_bstop) {
-        m_cond_non_full.Wait(m_task_mutex);
+    return ideals;
+}
+
+bool TaskThreadMgr::Init()
+{
+    bool binit = true;
+
+    if (!m_task_queue.Init()) {
+        return false;
     }
 
-    if (m_bstop) {
-        m_task_mutex.UnLock();
-        return false;   
+    if (!m_thread_list) {
+        if (m_thread_cnt <= 0) {
+            m_thread_cnt = CalcIdealThreadCnt();
+        }
+        
+        m_thread_list = new(std::nothrow) Thread *[m_thread_cnt];
+        if (!m_thread_list) {
+            return false;
+        }
+        memset(m_thread_list, 0, sizeof(Thread*) * m_thread_cnt);
+
+        for (unsigned i = 0; i < m_thread_cnt; ++i) {
+            m_thread_list[i] = new(std::nothrow) 
+                Thread(&thread_pool_proc, this);
+
+            if (!m_thread_list[i] || !m_thread_list[i]->Start()) { 
+                binit = false;
+            }
+        }
     }
 
-    bret = m_task_queue.Enqueue(task);
+    return binit;
+}
 
-    m_task_mutex.UnLock();
-    m_cond_non_empty.Signal();
+bool TaskThreadMgr::UnInit()
+{
+    if (!Stop()) {   //stop first, maybe fail
+        return false;
+    }
 
-    return bret;
+    if (m_thread_list) {
+        for (unsigned i = 0; i < m_thread_cnt; ++i) {
+            if (m_thread_list[i]) {
+                delete m_thread_list[i];
+                m_thread_list[i] = nullptr;
+            }
+        }
+
+        delete[] m_thread_list;
+        m_thread_list = nullptr;
+    }
+    m_thread_cnt = 0;
+
+    //if task not be handled, a chance to notify
+    if (!m_task_queue.Empty()) {
+        const task_info_t &task = m_task_queue.Dequeue();
+        task.cancel_fun(task.data);
+    }
+
+    return true;
 }
 
 bool TaskThreadMgr::Start()
@@ -57,6 +112,21 @@ bool TaskThreadMgr::Start()
     m_bstop = false;
 
     return Init();
+}
+
+bool TaskThreadMgr::Stop()
+{
+    bool bret = true; 
+
+    m_bstop = true;
+    m_cond_non_empty.Broadcast();
+    m_cond_non_full.Broadcast();
+
+    for (unsigned i = 0; i < m_thread_cnt; ++i) {
+        bret = m_thread_list[i]->Stop();
+    }
+
+    return bret;
 }
 
 #if defined(_WIN32) 
@@ -124,96 +194,27 @@ bool TaskThreadMgr::run()
     return true;
 }
 
-bool TaskThreadMgr::Stop()
+bool TaskThreadMgr::AddTask(const task_info_t *task)
 {
-    bool bret = true; 
+    bool bret = false;
 
-    m_bstop = true;
-    m_cond_non_empty.Broadcast();
-    m_cond_non_full.Broadcast();
+    m_task_mutex.Lock();
 
-    for (unsigned i = 0; i < m_thread_cnt; ++i) {
-        bret = m_thread_list[i]->Stop();
+    while (m_task_queue.Full() && !m_bstop) {
+        m_cond_non_full.Wait(m_task_mutex);
     }
+
+    if (m_bstop) {
+        m_task_mutex.UnLock();
+        return false;   
+    }
+
+    bret = m_task_queue.Enqueue(task);
+
+    m_task_mutex.UnLock();
+    m_cond_non_empty.Signal();
 
     return bret;
 }
 
-bool TaskThreadMgr::Init()
-{
-    bool binit = true;
 
-    if (!m_task_queue.Init()) {
-        return false;
-    }
-
-    if (!m_thread_list) {
-        if (m_thread_cnt <= 0) {
-            m_thread_cnt = CalcIdealThreadCnt();
-        }
-        
-        m_thread_list = new(std::nothrow) Thread *[m_thread_cnt];
-        if (!m_thread_list) {
-            return false;
-        }
-        memset(m_thread_list, 0, sizeof(Thread*) * m_thread_cnt);
-
-        for (unsigned i = 0; i < m_thread_cnt; ++i) {
-            m_thread_list[i] = new(std::nothrow) 
-                Thread(&thread_pool_proc, this);
-
-            if (!m_thread_list[i] || !m_thread_list[i]->Start()) { 
-                binit = false;
-            }
-        }
-    }
-
-    return binit;
-}
-
-bool TaskThreadMgr::UnInit()
-{
-    if (!Stop()) {   //stop first, maybe fail
-        return false;
-    }
-
-    if (m_thread_list) {
-        for (unsigned i = 0; i < m_thread_cnt; ++i) {
-            if (m_thread_list[i]) {
-                delete m_thread_list[i];
-                m_thread_list[i] = nullptr;
-            }
-        }
-
-        delete[] m_thread_list;
-        m_thread_list = nullptr;
-    }
-    m_thread_cnt = 0;
-
-    //if task not be handled, a chance to notify
-    if (!m_task_queue.Empty()) {
-        const task_info_t &task = m_task_queue.Dequeue();
-        task.cancel_fun(task.data);
-    }
-
-    return true;
-}
-
-unsigned TaskThreadMgr::CalcIdealThreadCnt()
-{
-    // ideals = 2 * CPUs + 2
-
-    unsigned ideals = 1;
-
-#if defined(_WIN32) 
-    SYSTEM_INFO syinfo;
-    GetSystemInfo(&syinfo);
-    ideals = syinfo.dwNumberOfProcessors * 2 + 2;
-#elif defined(__linux__)
-    ideals = get_nprocs();
-#else 
-    #error "this system not support!"
-#endif 
-
-    return ideals;
-}
