@@ -1,0 +1,47 @@
+异常捕获处理方式:  
+
+>. 结构化异常处理(SEH)
+    __try
+    {
+       ...... //
+    }
+    __except(GetExceptionCode(), GetExceptionInformation())
+    {
+       ...... //
+    }
+    
+>. C++类型化异常
+    try
+    {
+      ...... //
+    }
+    catch(Execption &e)
+    {
+      ...... //
+    }
+    
+>. 向量化异常处理(VEH)
+    PVOID pt = AddVectoredExceptionHandler(0/1, handle_func);
+    ...... //
+    RemoveVectoredExceptionHandler(pt);
+    
+>. 未捕获的异常处理  (为防止自己的handle_func中途被替换， 可将SetUnhandledExceptionFilter函数的执行指令开头替换为 jmp 至null, 并返回)
+   SetUnhandledExceptionFilter(hanlde_func);
+   ...... //
+   
+>. C++提供signal handle信号处理机制
+   (SIGABRT: Abnormal termination)
+   (SIGFPE: Floating-point error)
+   (SIGILL: Illegal instruction)
+   (SIGINT: CTRL+C signal)
+   (SIGSEGV: Illegal storage access)
+   (SIGTERM: terminate)
+   #include <signal.h>
+   void signal_segv_handle(int);
+   void signal_int_handle(int);
+   signal(SIGSEGV, signal_segv_hanle);
+   signal(SIGINT, signal_int_handle);
+   
+>. C++ new异常捕获、C malloc异常捕获
+   _set_new_handle(int (*hanlde_fucnc)(size_t));   //new异常捕获
+   _set_new_mode(int 0/1);  //malloc处理模式
