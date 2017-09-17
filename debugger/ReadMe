@@ -1,0 +1,19 @@
+Win32 Debugger调试器实现过程：
+    1. 调试器启动拉起一个Exe程序 (CreateProcess);
+    2. CreateProcess启动被调试Exe程序时， 指定DEBUG_PROCESS方式调试进程；
+    3. 调试器等待DebugEvent事件 (while循环、WaitForDebugEvent);  (例如: INT 3中断事件、DebugString事件)
+    4. 当有DebugEvent事件时，获取Debug类型、获取上下文环境(GetThreadContext线程上下文、读取寄存器等)
+    5. 重复以上过程，直到结束。
+  
+win32 Debugger调试器设置断点原理:
+    (断点: 分软断点、硬断点； 软断点即常用的程序断点， 硬断点为数据断点、针对ROM只读代码)
+    >. vc调试器在代码前设置断点时， 调试器会针对pdb symbol符号找到代码行对应的指令代码，并通过PE head头部.text信息 和 ReadProcessMemory读取指令地址；
+    >. 不管指令有多长，vc调试器只需将指令的第一个字节替换为 cc (INT 3)， 并保存替换前的字节数值(用于调试后复原指令)；
+    >. 程序运行后，遇到cc(INT 3)中断指令时，会发送DebugEvent事件，并等待返回；如果vc调试器监听了该DebugEvent事件，就能获取Debug类型和上下文环境、并调试；
+    >. 调试完，vc调试器会将之前保存的字节数值 替换回被调试的指令的第一个字节cc， 并继续运行 (WriteProcessMemory写入)
+    单步调试就是上面的逻辑，反复的在被调试指令处写入cc、跟踪DebugEvent事件、获取上下文、复原指令、继续执行。
+  
+常用调试方法:
+    1. 设置断点、跟踪调试  (其目的是看运行的过程)；
+    2. 查看源代码生成的汇编代码  (其目的是看算法的正确性、以及函数调用约束规则等)；
+    3. 显示程序运行信息，使用printf、OutputDebugString、log等方式记录输出；
