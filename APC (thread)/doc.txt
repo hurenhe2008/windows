@@ -1,0 +1,31 @@
+
+/*
+
+Adds a user-mode asynchronous procedure call (APC) object to the APC queue of the specified thread.
+
+The APC support provided in the operating system allows an application to queue an APC object to a thread. To ensure successful execution of functions used by the APC, APCs should be queued only to threads in the caller's process.
+Note  Queuing APCs to threads outside the caller's process is not recommended for a number of reasons. DLL rebasing can cause the addresses of functions used by the APC to be incorrect when the functions are executed outside the caller's process. Similarly, if a 64-bit process queues an APC to a 32-bit process or vice versa, addresses will be incorrect and the application will crash. Other factors can prevent successful function execution, even if the address is known.
+ 
+Each thread has its own APC queue. The queuing of an APC is a request for the thread to call the APC function. The operating system issues a software interrupt to direct the thread to call the APC function.
+When a user-mode APC is queued, the thread is not directed to call the APC function unless it is in an alertable state. After the thread is in an alertable state, the thread handles all pending APCs in first in, first out (FIFO) order, and the wait operation returns WAIT_IO_COMPLETION. A thread enters an alertable state by using SleepEx, SignalObjectAndWait, WaitForSingleObjectEx, WaitForMultipleObjectsEx, or MsgWaitForMultipleObjectsEx to perform an alertable wait operation.
+If an application queues an APC before the thread begins running, the thread begins by calling the APC function. After the thread calls an APC function, it calls the APC functions for all APCs in its APC queue.
+It is possible to sleep or wait for an object within the APC. If you perform an alertable wait inside an APC, it will recursively dispatch the APCs. This can cause a stack overflow.
+When the thread is terminated using the ExitThread or TerminateThread function, the APCs in its APC queue are lost. The APC functions are not called.
+When the thread is in the process of being terminated, calling QueueUserAPC to add to the thread's APC queue will fail with (31) ERROR_GEN_FAILURE.
+
+
+url:   https://msdn.microsoft.com/zh-cn/library/windows/desktop/ms684954
+
+
+DWORD WINAPI QueueUserAPC(
+  _In_ PAPCFUNC  pfnAPC,            //APC callback function.
+  _In_ HANDLE    hThread,
+  _In_ ULONG_PTR dwData             //APC callback function parameter.
+);
+
+
+VOID CALLBACK APCProc(
+  _In_ ULONG_PTR dwParam
+);
+
+*/
