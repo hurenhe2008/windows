@@ -2,3 +2,5 @@
 url:   https://docs.microsoft.com/en-us/message-analyzer/etw-framework-conceptual-tutorial
 
 github:  https://github.com/google/UIforETW
+
+doc:   https://www.cnblogs.com/Clingingboy/archive/2013/02/19/2917793.html
