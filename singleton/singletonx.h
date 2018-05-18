@@ -11,13 +11,13 @@
 
 /***
 *
-* regist event callback to exit manager.
+* regist callback to exit manager.
 *
 ***/
 typedef void(*Func)(void *);
-void regist_exit_event(Func pFunc, void *data)
+void regist_exit_cb(Func pFunc, void *data)
 {
-    //regist event to exit manager.
+    //regist callback to exit manager.
 }
 
   
@@ -65,7 +65,7 @@ public:
             {
                 m_pInstance = Traits::alloc();
 
-                regist_exit_event(destroy, nullptr);
+                regist_exit_cb(destroy, nullptr);
             }
         }
 
