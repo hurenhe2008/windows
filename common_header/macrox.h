@@ -2,7 +2,7 @@
 #define _MACRO_H_
 
 
-//ºêÕ¹¿ª×¢Òâ: ½«ºê±äÁ¿Ê¹ÓÃ()°üÆðÀ´
+//å®å±•å¼€æ³¨æ„: å°†å®å˜é‡ä½¿ç”¨()åŒ…èµ·æ¥
 #define SUM(x, y)      x + y         //warning: SUM(1,2) * SUM(2,3)  -->  1 + 2 * 2 + 3 
 
 #define SUM(x, y)     (x + y)        //warning: SUM(1 || 2, 3)  -->  1 || 2 + 3  -->  1 || (2 + 3)
@@ -11,27 +11,27 @@
 
 
 
-//ºê¼ÆËã½á¹¹Ìå³ÉÔ±±äÁ¿Æ«ÒÆ  
+//å®è®¡ç®—ç»“æž„ä½“æˆå‘˜å˜é‡åç§»  
 #define OFFSET(type, var)      ((unsigned int)&((type *)0)->var)
 
-//ºê¼ÆËã½á¹¹Ìå³ÉÔ±±äÁ¿´óÐ¡
+//å®è®¡ç®—ç»“æž„ä½“æˆå‘˜å˜é‡å¤§å°
 #define OFFSIZE(type, var)     sizeof(((type *)0)->var)
 
 
 
-//±äÁ¿½á¹¹ÌåÄÚ´æ¶ÔÆë £¨Ä¬ÈÏ¶ÔÆë£ºM×Ö½Ú£©
+//å˜é‡ç»“æž„ä½“å†…å­˜å¯¹é½ ï¼ˆé»˜è®¤å¯¹é½ï¼šMå­—èŠ‚ï¼‰
 #define ALLIGN(x, M)           ((x + M - 1) & (~(M - 1)))    
 
 
 
-// #  ##  #@    [×ª±ä×Ö·û´®¡¢×ª±ä×Ö·û¡¢Æ´½Ó×Ö·û´®]
+// #  ##  #@    [è½¬å˜å­—ç¬¦ä¸²ã€è½¬å˜å­—ç¬¦ã€æ‹¼æŽ¥å­—ç¬¦ä¸²]
 #define TOSTRING(x)      #x
 #define TOCHAR(x)        #@x
 #define LINKSTRING(x,y)  x##y
 
 
 #define TOSTR2(x)        #x
-#define TOSTR(x)         TOSTR2(x)   //Á½´ÎºêÌø×ª
+#define TOSTR(x)         TOSTR2(x)   //ä¸¤æ¬¡å®è·³è½¬
 
 #define SELF_MSG(msg)    message(__FILE__ "(" TOSTR(__LINE__) "):" msg)   // #msg
 #pragma SELF_MSG("hello, world!")
@@ -41,16 +41,16 @@
 
 
 
-//±àÒëÆ÷Ô¤¶¨Òåºê
-__FILE__       //ÎÄ¼þ   [×Ö·û´®]
-__LINE__       //ÐÐÊý   [ÕûÊý]
-__TIME__       //Ê±¼ä   [×Ö·û´®]
-__DATE__       //ÈÕÆÚ   [×Ö·û´®]
-__FUNCTION__   //º¯Êý   [×Ö·û´®]
+//ç¼–è¯‘å™¨é¢„å®šä¹‰å®
+__FILE__       //æ–‡ä»¶   [å­—ç¬¦ä¸²]
+__LINE__       //è¡Œæ•°   [æ•´æ•°]
+__TIME__       //æ—¶é—´   [å­—ç¬¦ä¸²]
+__DATE__       //æ—¥æœŸ   [å­—ç¬¦ä¸²]
+__FUNCTION__   //å‡½æ•°   [å­—ç¬¦ä¸²]
 
 
 
-//C++±àÒëÆ÷ ¼æÈÝ C
+//C++ç¼–è¯‘å™¨ å…¼å®¹ C
 #ifdef __cplusplus
 extern "C"
 {
@@ -62,13 +62,12 @@ extern "C"
 
 
 
-//DLL api µ¼Èëµ¼³ö
+//DLL api å¯¼å…¥å¯¼å‡º
 #ifdef DLLEXPORT 
 #define DLLAPI __declspec(dllexport)
 #else
 #define DLLAPI __declspec(dllimport)
 #endif 
-
 
 
 #endif //_MACRO_H_
