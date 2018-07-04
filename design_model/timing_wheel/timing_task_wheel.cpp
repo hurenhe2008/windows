@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "time_task_wheel.h"
 
 std::mutex TimeTaskWheel::ms_mutex;
