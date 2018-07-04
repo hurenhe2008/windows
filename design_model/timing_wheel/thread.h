@@ -10,23 +10,23 @@ public:
     virtual ~Thread();
 
     bool start();
-    bool isrun() const { return m_brun; }
-    bool stop(unsigned timeout = INFINITE);
+    bool stop();
 
     virtual unsigned run() = 0;
+
+protected:
+	bool is_to_run() { return m_brun; }
 
 private:
     static unsigned __stdcall thread_proc(void *);
 
-    Thread(const Thread&) = delete;
-    Thread& operator=(const Thread&) = delete;
-
-protected:
-    volatile bool m_brun;
-
 private:
-    HANDLE        m_hthread;
-};
+	volatile bool m_brun;
+    HANDLE m_hthread;
 
+	//disable assign operator and copy.
+	Thread(const Thread&) = delete;
+	Thread& operator=(const Thread&) = delete;
+};
 
 #endif //_THREAD_H_
