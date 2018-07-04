@@ -1,75 +1,57 @@
+#include "stdafx.h"
+
 #include <stdio.h>
 #include <stdlib.h>
-#include "timing_task_wheel.h"
 
-static int s_data = 0;
-static int s_cnt = 0;
-static const int s_sleep_time = 10000;   //10s
+#include "time_task_wheel.h"
 
-static void insert_task();
-static bool task_touch(void *data);
-static void task_cancel(void *data);
-static void task_error(void *data);
+bool test_handle(void *data)
+{
+	char *pstr = (char *)data;
+
+	printf("test_handle: %s\n", pstr);
+
+	free(data);
+
+	return true;
+}
+
+void test_cancel(void *data)
+{
+	char *pstr = (char *)data;
+
+	printf("test_cancel: %s\n", pstr);
+
+	free(data);
+}
+
 
 int main(int argc, const char *argv[])
 {
-    if (!TimingTaskWheel::instance().start()) {
-        abort();
-    }
+	for (int i = 0; i < 20; ++i)
+	{
+		for (int j = 0; j < 5; ++j)
+		{
+			time_task_t task;
+			task.handle_func = test_handle;
+			task.cancel_func = test_cancel;
+			task.after_seconds = i;
 
-    while (s_cnt++ < 10) {
-        insert_task();
+			char *pstr = (char *)malloc(50);
+			sprintf_s(pstr, 50, "id[%d]: task[%d]", i, j);
+			task.data = (void *)pstr;
 
-        Sleep(s_sleep_time);
-    }
+			TimeTaskWheel::instance()->insert_task(&task);
+		}	
+	}
+	
+	TimeTaskWheel::instance()->start();
 
-    Sleep(1000 * 10);
-    
-    TimingTaskWheel::instance().destroy();
-    
-    return 0;
-}
+	::Sleep(15000);
 
-void insert_task()
-{
-    timing_task_t task;
-    task.touch_func = task_touch;
-    task.error_func = task_error;
-    task.cancel_func = task_cancel;
+	TimeTaskWheel::instance()->stop();
 
-    for (int i = 0; i < 5; ++i) {
-        task.data = (void *)s_data;
-        task.touch_after_seconds = (60 + s_data);
-        TimingTaskWheel::instance().insertTask(&task);
-        ++s_data;
-    }
-}
+	system("pause");
 
-bool task_touch(void *data)
-{
-    int taskid = (int)data;
-
-    if (0 == (taskid & 0x01)) {
-        printf("task id: %d excute success!\n", taskid);
-        return true;
-    }
-    else {
-        printf("task id: %d excute failed!\n", taskid);
-        return false;
-    }
-    
-}
-
-void task_cancel(void *data)
-{
-    int taskid = (int)data;
-
-    printf("task id: %d is canceled!\n", taskid);
-}
-
-void task_error(void *data)
-{
-    int taskid = (int)data;
-
-    printf("Error: task id(%d) failed!\n", taskid);
+	return 0;
 }
