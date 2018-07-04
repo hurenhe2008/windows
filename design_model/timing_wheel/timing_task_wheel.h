@@ -1,44 +1,46 @@
-#ifndef _TIMING_TASK_WHEEL_H_
-#define _TIMING_TASK_WHEEL_H_
+#ifndef _TIME_TASK_WHEEL_H_
+#define _TIME_TASK_WHEEL_H_
 
 #include <list>
-#include "mutex2.h"
-#include "timing_task.h"
+#include <mutex>
+#include <memory>
+
+#include "time_task.h"
 #include "thread.h"
 
-class TimingTaskWheel : public Thread
+class TimeTaskWheel : public Thread
 {
 public:
-    static TimingTaskWheel& instance();
-    static void destroy();
+	static TimeTaskWheel* instance();
+	~TimeTaskWheel();
 
-    bool insertTask(timing_task_t *);
-
-private:
-    TimingTaskWheel();
-    ~TimingTaskWheel();
-
-    bool init(); 
-    bool uninit();
-    unsigned run();
-    void handleTaskQueue();
+	bool insert_task(time_task_t *);
 
 private:
-    TimingTaskWheel(const TimingTaskWheel &) = delete;
-    TimingTaskWheel& operator=(const TimingTaskWheel&) = delete;
-    TimingTaskWheel* operator&() = delete;
+	TimeTaskWheel();
 
-    static Mutex2            m_inst_mutex;
-    static TimingTaskWheel  *mp_self;
+	bool init();
+	bool uninit();
+	void handle_time_tasks();
+	void cancel_time_tasks();
 
-    unsigned                 m_curr_pos;
-    Mutex2                   m_task_mutex;
-    HANDLE                   m_wait_event;
+	virtual unsigned run();
 
-#define PERIOD_TIME      1000   /* ms */
-#define TASK_QUEUE_SIZE  3600   /* s */
-    typedef std::list<timing_task_t> task_queue_t;
-    task_queue_t             m_task_queue[TASK_QUEUE_SIZE];
+private:
+	static std::mutex ms_mutex;
+	static std::auto_ptr<TimeTaskWheel> ms_self;  //use auto_ptr to auto destroy.
+
+	unsigned m_curr_pos;
+	HANDLE   m_wait_event;
+
+#define PERIOD_TIME      1000    //ms
+#define TASK_QUEUE_SIZE  3600    //s, one hour time wheel
+	typedef std::list<time_task_t> task_queue_t;
+	task_queue_t m_task_queue[TASK_QUEUE_SIZE];
+
+	//disable assign operator and copy.
+	TimeTaskWheel(const TimeTaskWheel &) = delete;
+	TimeTaskWheel& operator=(const TimeTaskWheel&) = delete;
 };
 
-#endif //_TIMING_TASK_WHEEL_H_
+#endif //_TIME_TASK_WHEEL_H_
