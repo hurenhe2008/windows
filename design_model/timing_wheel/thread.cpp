@@ -1,69 +1,67 @@
+#include "stdafx.h"
 #include "thread.h"
 #include <process.h>
 
 Thread::Thread()
-    : m_brun(false)
-    , m_hthread(NULL)
+	: m_brun(false)
+	, m_hthread(NULL)
 {
 
 }
 
 Thread::~Thread()
 {
+	m_brun = false;
 
+	if (m_hthread) 
+	{
+		CloseHandle(m_hthread);
+		m_hthread = NULL;
+	}
 }
 
 bool Thread::start()
 {
-    if (m_hthread || m_brun) {
-        return true;
-    }
+	if (m_hthread && m_brun)
+		return true;
 
-    m_hthread = (HANDLE)_beginthreadex(nullptr, 0, thread_proc, 
-        (void *)this, CREATE_SUSPENDED, nullptr);
+	m_brun = true;
 
-    if (NULL == m_hthread) {
-        return m_brun = false;
-    }
+	m_hthread = (HANDLE)_beginthreadex(nullptr, 0, thread_proc,
+		(void *)this, 0, nullptr);
 
-    m_brun = true;
-
-    if (-1 == ResumeThread(m_hthread)) {
-        m_brun = false;
-        CloseHandle(m_hthread);
-        m_hthread = NULL;
-    }
-
-    return m_brun;
+	return m_hthread ? true : false;
 }
 
 unsigned __stdcall Thread::thread_proc(void *data)
 {
-    Thread *pthread = (Thread *)(data);
-    
-    if (pthread) 
-        return pthread->run();
-    else
-        return 0;
+	Thread *pthread = (Thread *)(data);
+
+	if (pthread)
+		return pthread->run();
+
+	return 0;
 }
 
-bool Thread::stop(unsigned timeout)
+bool Thread::stop()
 {
-    if (!m_brun)  return true;
+	if (!m_brun && !m_hthread)  return true;
 
-    m_brun = false;
+	m_brun = false;
 
-    if (!m_hthread)  return true;
+	if (m_hthread)
+	{
+		DWORD ret = WaitForSingleObject(m_hthread, INFINITE);
+		if (WAIT_OBJECT_0 == ret)
+		{
+			CloseHandle(m_hthread);
+			m_hthread = NULL;
+		}
+		else
+		{	
+			abort();  //error happen.
+		}
+	}
 
-    DWORD ret = WaitForSingleObject(m_hthread, timeout);
-
-    if (ret != WAIT_OBJECT_0) {
-        m_brun = true;
-    }
-    else {
-        CloseHandle(m_hthread);
-        m_hthread = NULL;
-    }
-
-    return !m_brun;
+	return !m_brun && !m_hthread;
 }
