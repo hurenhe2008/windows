@@ -1,201 +1,210 @@
-#include "timing_task_wheel.h"
-#include "mutex_locker.h"
-#include <Windows.h>
-#include <new>
+#include "stdafx.h"
+#include "time_task_wheel.h"
 
+std::mutex TimeTaskWheel::ms_mutex;
+std::auto_ptr<TimeTaskWheel> TimeTaskWheel::ms_self;
 
-TimingTaskWheel* TimingTaskWheel::mp_self = nullptr;
-Mutex2 TimingTaskWheel::m_inst_mutex;
-
-TimingTaskWheel& TimingTaskWheel::instance()
+TimeTaskWheel* TimeTaskWheel::instance()
 {
-    if (!mp_self) {
-        /* lock */
-        m_inst_mutex.lock();
-        /* double check */
-        if (!mp_self) {
-            /* avoid cpu change constructor and assign sequence */
-            TimingTaskWheel *tmp = new TimingTaskWheel();
-            if (!tmp || !tmp->init()) {
-                delete tmp;
-                tmp = nullptr;
-            }      
-            mp_self = tmp;
-        }
-        /* unlock */
-        m_inst_mutex.unlock();
-    }
+	if (!ms_self.get()) {
 
-    return *mp_self;
+		std::lock_guard<std::mutex> guard(ms_mutex);
+
+		if (!ms_self.get()) { //double check
+			
+			TimeTaskWheel *tmp = new(std::nothrow)TimeTaskWheel;
+			if (!tmp || !tmp->init()) 
+			{
+				delete tmp;
+				tmp = nullptr;
+			}
+
+			ms_self.reset(tmp);
+		}
+
+	}
+
+	return ms_self.get();
 }
 
-void TimingTaskWheel::destroy()
-{
-    if (mp_self) {
-        delete mp_self;
-        mp_self = nullptr;
-    }
-}
-
-TimingTaskWheel::TimingTaskWheel()
-    : m_curr_pos(0)
-    , m_wait_event(NULL)
+TimeTaskWheel::TimeTaskWheel()
+	: m_curr_pos(0)
+	, m_wait_event(NULL)
 {
 
 }
 
-TimingTaskWheel::~TimingTaskWheel()
+TimeTaskWheel::~TimeTaskWheel()
 {
-	this->uninit();
+	uninit();
 }
 
-bool TimingTaskWheel::init()
+bool TimeTaskWheel::init()
 {
-    m_wait_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-    if (NULL == m_wait_event) return false;
+	//not mutex here, avoid dead mutex.
+	m_wait_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+	if (NULL == m_wait_event) return false;
 
-    MutexLocker lock(&m_task_mutex);
-
-    for (int i = 0; i < TASK_QUEUE_SIZE; ++i) {
-        m_task_queue[i].clear();
-    }
+	for (int i = 0; i < TASK_QUEUE_SIZE; ++i) 
+	{
+		m_task_queue[i].clear();
+	}
 
 	m_curr_pos = 0;
 
-    return true;
+	return true;
 }
 
-bool TimingTaskWheel::uninit()
+bool TimeTaskWheel::uninit()
 {
-    /* stop thread if run */
-    if (!this->stop())  return false;
+	if (!stop())
+	{
+		abort(); //stop failed.
+		return false;
+	}
 
-    if (m_wait_event) {
-        CloseHandle(m_wait_event);
-        m_wait_event = NULL;
-    }
+	std::lock_guard<std::mutex> guard(ms_mutex);
 
-    MutexLocker lock(&m_task_mutex);
+	for (int i = 0; i < TASK_QUEUE_SIZE; ++i) 
+	{
+		m_task_queue[i].clear();
+	}
 
-    for (int i = 0; i < TASK_QUEUE_SIZE; ++i) {
-
-        task_queue_t::const_iterator cit = m_task_queue[i].begin();
-
-        for (; cit != m_task_queue[i].end(); ++cit) {
-            /*task not finish, callback notify*/
-            if (cit->touch_after_seconds > 0) {
-                cit->cancel_func(cit->data);
-            }
-        }
-
-        m_task_queue[i].clear();
-    }
 	m_curr_pos = 0;
 
-    return true;
+	if (m_wait_event)
+	{
+		CloseHandle(m_wait_event);
+		m_wait_event = NULL;
+	}
+
+	return true;
 }
 
-unsigned TimingTaskWheel::run()
-{ 
-    unsigned last_time = 0;
-    int interval = 0;
-    bool bfirst = true;
-    int retval = 0;
+unsigned TimeTaskWheel::run()
+{
+	unsigned last_time = 0;
+	int interval = 0;
+	bool bfirst = true;
+	int retval = 0;
 
-    while (m_brun) {
-        
-        if (!bfirst) {
-            interval = last_time + PERIOD_TIME - GetTickCount();
-            if (interval < 0) {
-                interval = 0;
-            }
+	while (is_to_run())   
+	{
+		if (!bfirst) 
+		{
+			interval = last_time + PERIOD_TIME - GetTickCount();
+			if (interval < 0)    //adjust interval.
+			{
+				interval = 0;
+			}
 			last_time += PERIOD_TIME;
-        }
-        else {
-            last_time = GetTickCount();
-            interval = PERIOD_TIME;
-            bfirst = false;
-        }
+		}
+		else //init.
+		{
+			last_time = GetTickCount();
+			interval = PERIOD_TIME;
+			bfirst = false;
+		}
 
-        /* time interval */
 #ifdef _DEBUG 
-		printf("wait for time: %d\n", interval);
+		printf("current wait time: %d\n", interval);
 #endif 
 
-        DWORD ret = WaitForSingleObject(m_wait_event, interval);
-        if (WAIT_TIMEOUT != ret) {
-            retval = GetLastError();
-            break;
-        }
+		WaitForSingleObject(m_wait_event, interval);
 
-        handleTaskQueue();
-    }
+		handle_time_tasks();
+	}
+	
+	cancel_time_tasks();  //cancel task 
 
-    return retval;
+	return retval;
 }
 
-void TimingTaskWheel::handleTaskQueue()
+void TimeTaskWheel::handle_time_tasks()
 {
-    MutexLocker lock(&m_task_mutex);
+	std::lock_guard<std::mutex> guard(ms_mutex);
 
-    if (m_curr_pos >= TASK_QUEUE_SIZE) {
-        /* error happen */
-        abort(); 
-    }
- 
-    task_queue_t &queue = m_task_queue[m_curr_pos];
-    task_queue_t::iterator it = queue.begin();
+	if (m_curr_pos >= TASK_QUEUE_SIZE) 
+	{	
+		abort();   /* error happen */
+	}
+
+	task_queue_t &queue = m_task_queue[m_curr_pos];
+	task_queue_t::iterator it = queue.begin();
 
 #ifdef _DEBUG
 	unsigned cnt = 0;
 #endif 
 
-	for (; it != queue.end(); ) {
-		if (it->touch_after_cycles <= 0) {
-			if (!it->touch_func(it->data)) {
-				++cnt;
-				it->error_func(it->data);
+	for (; it != queue.end(); ) 
+	{
+		if (it->after_cycles <= 0) 
+		{
+#ifdef _DEBUG
+			++cnt;
+#endif 
+			if (it->handle_func && !it->handle_func(it->data)) 
+			{
+				if (it->error_func) it->error_func(it->data);
 			}
 			it = queue.erase(it);
 		}
-		else {
-			it->touch_after_cycles -= 1;
-			it++;
+		else 
+		{
+			it->after_cycles -= 1;
+			++it;
 		}
 	}
 
 #ifdef _DEBUG
-	printf("POS: %d  -->  touch event count: %d\n", m_curr_pos, cnt);
+	printf("position:%d  -->  handle task count: %d\n", m_curr_pos, cnt);
 #endif 
 
-    if (m_curr_pos + 1 < TASK_QUEUE_SIZE)
-        ++m_curr_pos;
-    else
-        m_curr_pos = 0;
-
+	if (m_curr_pos + 1 < TASK_QUEUE_SIZE)
+		++m_curr_pos;
+	else
+		m_curr_pos = 0;
 }
 
-bool TimingTaskWheel::insertTask(timing_task_t *task)
+void TimeTaskWheel::cancel_time_tasks()
 {
-    MutexLocker lock(&m_task_mutex);
+	std::lock_guard<std::mutex> guard(ms_mutex);
 
-    if (m_curr_pos >= TASK_QUEUE_SIZE) {
-        abort();
-    }
+	for (int i = 0; i < TASK_QUEUE_SIZE; ++i)
+	{
+		task_queue_t &queue = m_task_queue[i];
+		for (auto &it : queue)
+		{
+			if (it.cancel_func)
+			{
+				it.cancel_func(it.data);
+			}
+		}
 
-    /* cycles to recycle */
-    unsigned cycles = task->touch_after_seconds / TASK_QUEUE_SIZE;
-    /* insert position */
-    unsigned insert_pos = (m_curr_pos + task->touch_after_seconds)
-		% TASK_QUEUE_SIZE;
-    
-    task->touch_after_cycles = cycles;
+		m_task_queue[i].clear();
+	}
+}
 
-    if (insert_pos >= TASK_QUEUE_SIZE) {
-        insert_pos = insert_pos % TASK_QUEUE_SIZE;
-    }
-  
-    m_task_queue[insert_pos].push_back(*task);
+bool TimeTaskWheel::insert_task(time_task_t *task)
+{
+	std::lock_guard<std::mutex> guard(ms_mutex);
 
-    return true;
+	if (m_curr_pos >= TASK_QUEUE_SIZE) 
+	{
+		abort();   /* error happen */
+	}
+
+	unsigned total_seconds = task->after_seconds;
+
+	//calc cycles.
+	unsigned cycles = total_seconds / TASK_QUEUE_SIZE;
+
+	//calc position to insert.
+	unsigned insert_pos = (m_curr_pos + total_seconds) % TASK_QUEUE_SIZE;
+
+	task->after_cycles = cycles;
+
+	m_task_queue[insert_pos].push_back(*task);
+
+	return true;
 }
