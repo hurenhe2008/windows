@@ -16,7 +16,8 @@ semophare::~semophare()
 void semophare::wait()
 {
     std::unique_lock<std::mutex> locker(mutex);
-    while (--count < 0)
+    --count;
+    if (count < 0)
     {
         cond.wait(locker, [&]()->bool { return wakeup > 0; });
         --wakeup;
@@ -26,7 +27,8 @@ void semophare::wait()
 void semophare::signal()
 {
     std::unique_lock<std::mutex> locker(mutex);
-    if (++count <= 0)
+    ++count;
+    if (count <= 0)
     {
         ++wakeup;
         cond.notify_one();
@@ -36,7 +38,8 @@ void semophare::signal()
 void semophare::wait1()
 {
     std::unique_lock<std::mutex> locker(mutex);
-    while (--count < 0)
+    --count;
+    while (count < 0)   //while cycle
     {
         cond.wait(locker);
     }
@@ -45,7 +48,8 @@ void semophare::wait1()
 void semophare::signal1()
 {
     std::unique_lock<std::mutex> locker(mutex);
-    if (++count <= 0)
+    ++count;
+    if (count <= 0)
     {
         cond.notify_one();
     }
